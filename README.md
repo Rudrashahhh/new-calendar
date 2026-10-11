@@ -23,3 +23,7 @@ Serve `dist/` on another static host; register that origin in Google Cloud befor
 
 ## Checks
 Run `node --test tests/google-calendar.test.cjs` for pagination, recurring-instance normalization, all-day/overnight boundaries, stale refresh handling, token expiry, and late-response protection after disconnect.
+
+## Particles
+
+The site-wide Carolina blue canvas background adapts [Magic UI Particles](https://magicui.design/docs/components/particles) for this buildless HTML/JavaScript app. The shadcn CLI installs a React component, so its particle engine is ported in `dist/particles.js` without adding a React runtime. It follows the pointer gently, caps particle count and pixel density, pauses when the tab is hidden, and renders a still background when reduced motion is enabled. MIT attribution is in `dist/MAGICUI-LICENSE.txt`.
