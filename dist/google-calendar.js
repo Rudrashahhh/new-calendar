@@ -26,20 +26,21 @@
   ranges.sort((a,b)=>a.start-b.start);return ranges.reduce((all,r)=>{const last=all.at(-1);if(last&&r.start<=last.end){if(r.end>last.end)last.end=r.end}else all.push(r);return all},[]).map(r=>({timeMin:r.start.toISOString(),timeMax:r.end.toISOString()}));
  }
  class CalendarConnection {
-  constructor({clientId,onChange,fetchImpl=(...args)=>globalThis.fetch(...args)}){this.clientId=clientId;this.onChange=onChange;this.fetchImpl=fetchImpl;this.token=null;this.expiry=0;this.calendars=[];this.events=[];this.status='disconnected';this.message='Connect to see your live events.';this.lastSync=null;this.generation=0;this.controller=null;this.selection=new Set();this.initialized=false;this.cachedSignature='';}
+  constructor({clientId,onChange,fetchImpl=(...args)=>globalThis.fetch(...args)}){this.clientId=clientId;this.onChange=onChange;this.fetchImpl=fetchImpl;this.token=null;this.expiry=0;this.calendars=[];this.events=[];this.status='disconnected';this.message='Connect to see your live events.';this.lastSync=null;this.generation=0;this.controller=null;this.selection=new Set();this.initialized=false;this.cachedSignature='';this.authAttempt=0;this.authTimer=null;}
   notify(){this.onChange?.(this)}
   connected(){return !!this.token&&Date.now()<this.expiry}
   connect(){
    if(!this.clientId){this.status='setup';this.message='Google Calendar setup is still being completed.';this.notify();return}
    const oauth=root.google?.accounts?.oauth2;
    if(!oauth){this.status='error';this.message='Google sign-in could not load. Check your connection and try again.';this.notify();return}
+   const attempt=++this.authAttempt;clearTimeout(this.authTimer);this.authTimer=setTimeout(()=>{if(attempt!==this.authAttempt)return;this.authAttempt++;this.status='error';this.message='Google sign-in did not finish. Try again, or open this app in Safari or Chrome.';this.notify()},120000);
    this.status='authorizing';this.message='Choose your Google account to continue.';this.notify();
    try {const client=oauth.initTokenClient({client_id:this.clientId,scope:SCOPE,include_granted_scopes:false,
-    callback:async response=>{if(response.error||!response.access_token||!Number.isFinite(Number(response.expires_in))||Number(response.expires_in)<=30||!oauth.hasGrantedAllScopes(response,SCOPE)){this.status='error';this.message='Calendar access was not granted. You can try connecting again.';this.notify();return}this.controller?.abort();this.generation++;this.token=response.access_token;this.expiry=Date.now()+Math.max(0,Number(response.expires_in)*1000-30000);this.events=[];this.calendars=[];this.selection.clear();this.initialized=false;this.cachedSignature='';this.lastSync=null;this.status='connected';this.message='Loading your calendars…';this.notify();},
-    error_callback:error=>{this.status='error';this.message=error.type==='popup_failed_to_open'?'Allow the Google sign-in popup, then try again.':'Google sign-in was closed. Connect when you’re ready.';this.notify();}
-   });client.requestAccessToken({prompt:'select_account'});}catch{this.status='error';this.message='Google sign-in could not start. Please try again.';this.notify()}
+    callback:async response=>{if(attempt!==this.authAttempt)return;clearTimeout(this.authTimer);if(response.error||!response.access_token||!Number.isFinite(Number(response.expires_in))||Number(response.expires_in)<=30||!oauth.hasGrantedAllScopes(response,SCOPE)){this.status='error';this.message='Calendar access was not granted. You can try connecting again.';this.notify();return}this.controller?.abort();this.generation++;this.token=response.access_token;this.expiry=Date.now()+Math.max(0,Number(response.expires_in)*1000-30000);this.events=[];this.calendars=[];this.selection.clear();this.initialized=false;this.cachedSignature='';this.lastSync=null;this.status='connected';this.message='Loading your calendars…';this.notify();},
+    error_callback:error=>{if(attempt!==this.authAttempt)return;clearTimeout(this.authTimer);this.status='error';this.message=error.type==='popup_failed_to_open'?'Allow the Google sign-in popup, then try again.':'Google sign-in was closed. Connect when you’re ready.';this.notify();}
+   });client.requestAccessToken({prompt:'select_account'});}catch{clearTimeout(this.authTimer);this.status='error';this.message='Google sign-in could not start. Please try again.';this.notify()}
   }
-  disconnect(){this.controller?.abort();this.generation++;this.token=null;this.expiry=0;this.events=[];this.calendars=[];this.selection.clear();this.initialized=false;this.cachedSignature='';this.lastSync=null;this.status='disconnected';this.message='Disconnected. Your local plans and tasks are still here.';this.notify()}
+  disconnect(){clearTimeout(this.authTimer);this.authAttempt++;this.controller?.abort();this.generation++;this.token=null;this.expiry=0;this.events=[];this.calendars=[];this.selection.clear();this.initialized=false;this.cachedSignature='';this.lastSync=null;this.status='disconnected';this.message='Disconnected. Your local plans and tasks are still here.';this.notify()}
   async get(path,query,signal){
    if(!this.connected()){const error=new Error('Reconnect to Google to refresh your events.');error.status=401;throw error}
    const url=new URL(path,API);for(const [k,v]of Object.entries(query||{}))if(v!==undefined&&v!==null)url.searchParams.set(k,v);
