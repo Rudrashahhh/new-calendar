@@ -3,6 +3,7 @@
  'use strict';
  const SCOPE='https://www.googleapis.com/auth/calendar.readonly';
  const API='https://www.googleapis.com/calendar/v3/';
+ function eventLink(value){try{const url=new URL(value);if(url.protocol==='https:'&&((url.hostname==='calendar.google.com'&&url.pathname.startsWith('/calendar/'))||(url.hostname==='www.google.com'&&url.pathname.startsWith('/calendar/'))))return url.href}catch{}return 'https://calendar.google.com/calendar/u/0/r'}
  function dayKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
  function normalizeEvent(raw,calendar){
   if(!raw||raw.status==='cancelled'||!raw.id||!raw.start||!raw.end)return null;
@@ -10,7 +11,7 @@
   const start=allDay?raw.start.date:raw.start.dateTime,end=allDay?raw.end.date:raw.end.dateTime;
   if(!start||!end||Number.isNaN(new Date(start).getTime())||Number.isNaN(new Date(end).getTime()))return null;
   const startDate=allDay?start:dayKey(new Date(start));
-  return {id:`google:${calendar.id}:${raw.id}`,source:'google',title:raw.summary||'Busy',start,end,allDay,date:startDate,time:allDay?'00:00':new Date(start).toTimeString().slice(0,5),calendar:calendar.summaryOverride||calendar.summary||'Google Calendar',calendarId:calendar.id,space:/finance|investment/i.test([calendar.summaryOverride,calendar.summary,raw.summary].join(' '))?'Finance Society':'Personal',note:raw.location||'',link:typeof raw.htmlLink==='string'&&raw.htmlLink.startsWith('https://calendar.google.com/')?raw.htmlLink:'https://calendar.google.com/calendar/u/0/r'};
+  return {id:`google:${calendar.id}:${raw.id}`,source:'google',title:raw.summary||'Busy',start,end,allDay,date:startDate,time:allDay?'00:00':new Date(start).toTimeString().slice(0,5),calendar:calendar.summaryOverride||calendar.summary||'Google Calendar',calendarId:calendar.id,space:/finance|investment|\bufs\b/i.test([calendar.summaryOverride,calendar.summary,raw.summary].join(' '))?'Finance Society':'Personal',note:raw.location||'',link:eventLink(raw.htmlLink)};
  }
  function occursOn(event,date){
   if(event.allDay)return event.start<=date&&date<event.end;
