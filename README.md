@@ -27,3 +27,7 @@ Run `node --test tests/google-calendar.test.cjs` for pagination, recurring-insta
 ## Particles
 
 The site-wide Carolina blue canvas background adapts [Magic UI Particles](https://magicui.design/docs/components/particles) for this buildless HTML/JavaScript app. The shadcn CLI installs a React component, so its particle engine is ported in `dist/particles.js` without adding a React runtime. It follows the pointer gently, caps particle count and pixel density, pauses when the tab is hidden, and renders a still background when reduced motion is enabled. MIT attribution is in `dist/MAGICUI-LICENSE.txt`.
+
+## Animated lists and text reveal
+
+`dist/magic-motion.js` adapts Magic UI Animated List and Text Reveal for this plain HTML app. Schedule rows, both task lists, saved links, calendar source checkboxes, and month days enter in sequence; keyed rows keep their order and settle after changes. All data is present immediately, staggering is capped, unchanged lists retain their DOM and keyboard focus, and reduced motion disables animations. The motivational footer reveals its words as it scrolls into view without adding a long sticky section. Task and event text stays fully readable. The original React/Motion CLI components were adapted rather than adding a framework runtime.
