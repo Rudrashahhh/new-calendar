@@ -25,7 +25,7 @@
   ranges.sort((a,b)=>a.start-b.start);return ranges.reduce((all,r)=>{const last=all.at(-1);if(last&&r.start<=last.end){if(r.end>last.end)last.end=r.end}else all.push(r);return all},[]).map(r=>({timeMin:r.start.toISOString(),timeMax:r.end.toISOString()}));
  }
  class CalendarConnection {
-  constructor({clientId,onChange,fetchImpl=globalThis.fetch}){this.clientId=clientId;this.onChange=onChange;this.fetchImpl=fetchImpl;this.token=null;this.expiry=0;this.calendars=[];this.events=[];this.status='disconnected';this.message='Connect to see your live events.';this.lastSync=null;this.generation=0;this.controller=null;this.selection=new Set();this.initialized=false;this.cachedSignature='';}
+  constructor({clientId,onChange,fetchImpl=(...args)=>globalThis.fetch(...args)}){this.clientId=clientId;this.onChange=onChange;this.fetchImpl=fetchImpl;this.token=null;this.expiry=0;this.calendars=[];this.events=[];this.status='disconnected';this.message='Connect to see your live events.';this.lastSync=null;this.generation=0;this.controller=null;this.selection=new Set();this.initialized=false;this.cachedSignature='';}
   notify(){this.onChange?.(this)}
   connected(){return !!this.token&&Date.now()<this.expiry}
   connect(){
